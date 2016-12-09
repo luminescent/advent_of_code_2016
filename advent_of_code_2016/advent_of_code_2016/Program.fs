@@ -2,6 +2,7 @@
 // See the 'F# Tutorial' project for more help.
 
 open Day1
+open Day2
 open Microsoft.FSharp.Core.Operators 
 open System
 
@@ -10,7 +11,8 @@ open System
 [<EntryPoint>]
 let main argv = 
 
-    run_day1()    
+    //run_day1()    
+    run_day2()
     
     Console.ReadLine() |> ignore
 
