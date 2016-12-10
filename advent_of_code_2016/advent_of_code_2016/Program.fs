@@ -6,6 +6,7 @@ open Day2
 open Day3
 open Day4
 open Day5 
+open Day6
 open Microsoft.FSharp.Core.Operators 
 open System
 
@@ -18,13 +19,8 @@ let main argv =
     //run_day2()
     //run_day3()
     //run_day4()
-    run_day5()
-
-//    printfn "%A" (compute_md5 "abc3231929")
-//    printfn "%A" (compute_md5 "abc5017308")
-//    printfn "%A" (compute_md5 "abc5017309")
-
-
+    //run_day5()
+    run_day6()
     
     Console.ReadLine() |> ignore
 
