@@ -4,6 +4,7 @@
 open Day1
 open Day2
 open Day3
+open Day4
 open Microsoft.FSharp.Core.Operators 
 open System
 
@@ -14,7 +15,8 @@ let main argv =
 
     //run_day1()    
     //run_day2()
-    run_day3()
+    //run_day3()
+    run_day4()
     
     Console.ReadLine() |> ignore
 
