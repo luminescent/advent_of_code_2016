@@ -50,14 +50,46 @@ let compute_checksum room =
 let is_valid_room room = 
     room.ClaimedCheckSum = compute_checksum room 
 
+let cipher_char (c:char) positions = 
+    let offset = (int)'a'
+    let current = (int) c
+    let final = ((current - offset) + positions) % 26 + offset 
+    (char) (final)
+
+let cipher_str (s: string) positions =  
+    String.Concat(
+        s.ToCharArray()
+        |> Array.map (fun c -> (char) (cipher_char c positions))
+    )
+
+let cipher_segments (s: string list) positions = 
+    String.Join (" ",
+        s
+        |> List.map(fun a -> cipher_str a positions)
+        |> List.toArray 
+    )
+
+
 let run_day4() = 
+    let lines = File.ReadAllLines("Day4.txt")
+
     let sectorsSum = 
-        File.ReadAllLines("Day4.txt")
+        lines
         |> Array.map parse_room
         |> Array.filter is_valid_room
         |> Array.sumBy (fun r -> r.SectorId)
 
     printfn "Sum of valid room sector ids: %A" sectorsSum
+
+    let deciphered_list = 
+        lines 
+        |> Array.map parse_room 
+        |> Array.map (fun r -> (cipher_segments r.Segments r.SectorId, r.SectorId))
+        |> Array.filter(fun x -> (fst x).Contains("northpole") )
+
+    for x in deciphered_list do
+        printfn "%A" x
+
 
 
     

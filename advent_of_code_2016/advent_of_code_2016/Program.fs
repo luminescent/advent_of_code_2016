@@ -17,6 +17,7 @@ let main argv =
     //run_day2()
     //run_day3()
     run_day4()
+
     
     Console.ReadLine() |> ignore
 
