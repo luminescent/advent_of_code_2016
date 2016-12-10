@@ -22,7 +22,6 @@ let compute_checksum room =
         |> List.collect (fun s -> s.ToCharArray() |> Array.toList)
         |> List.toArray 
 
-
     let rec count_letters (s: char[]) position (dictionary: Dictionary<char, int>) =
         match position < s.Length with 
         | false -> dictionary 
@@ -44,8 +43,8 @@ let compute_checksum room =
         |> Seq.map(fun i -> fst i)
         |> Seq.toArray
 
-    let checksum = new string(top_5_most_frequent_chars)    
-    checksum
+    new string(top_5_most_frequent_chars)
+
 
 let is_valid_room room = 
     room.ClaimedCheckSum = compute_checksum room 
@@ -63,11 +62,10 @@ let cipher_str (s: string) positions =
     )
 
 let cipher_segments (s: string list) positions = 
-    String.Join (" ",
         s
         |> List.map(fun a -> cipher_str a positions)
         |> List.toArray 
-    )
+        |> String.concat " "
 
 
 let run_day4() = 
