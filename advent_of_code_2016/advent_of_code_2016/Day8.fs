@@ -54,7 +54,7 @@ let parse_line (s: string) =
 let to_pretty_print lighted =
     match lighted with 
     | true -> "#"
-    | _ -> "."
+    | _ -> " "
 
 let run_day8() =
     let lines = File.ReadAllLines("Day8.txt")
