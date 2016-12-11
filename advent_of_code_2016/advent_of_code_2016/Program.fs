@@ -8,6 +8,7 @@ open Day4
 open Day5 
 open Day6
 open Day7
+open Day8
 open Microsoft.FSharp.Core.Operators 
 open System
 
@@ -22,7 +23,8 @@ let main argv =
     //run_day4()
     //run_day5()
     //run_day6()
-    run_day7()
+    //run_day7()
+    run_day8()
 //
 //    let ia = parse_IpAddress "aba[bab]xyz"
 //
