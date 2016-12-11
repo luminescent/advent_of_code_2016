@@ -21,11 +21,13 @@ let main argv =
     //run_day3()
     //run_day4()
     //run_day5()
-    // run_day6()
+    //run_day6()
     run_day7()
-
-//    ["abba[mnop]qrst"; "abcd[bddb]xyyx"; "zbqynkvuyzsrnaycxa[xicrbiytzgwnrzg]bnchnjvqnvvamulteym[vyobaxgfdudkusb]utjdxdutkirbrcnru[nziciprzormocagfd]bhewqskrdgmwxke"]
-//    |> List.iter (fun addr -> printfn "%A" (parse_IpAddress addr) )
+//
+//    let ia = parse_IpAddress "aba[bab]xyz"
+//
+//    ["aba[bab]xyz"; "xyx[xyx]xyx"; "aaa[kek]eke"; "zazbz[bzb]cdb"]
+//    |> List.iter (fun addr -> printfn "%A" (addr |> parse_IpAddress |> supports_ssl) )
 
     
 

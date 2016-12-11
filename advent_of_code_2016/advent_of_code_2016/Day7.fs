@@ -30,7 +30,7 @@ let supports_tls ipaddress =
 
 let sequence_has_aba_and_corresponding_bab (sequence: string) (hypernet_sequences: string list) = 
     let is_aba(s: string) = 
-        s.Chars(0) = s.Chars(1) && s.Chars(0) <> s.Chars(1)
+        s.Chars(0) = s.Chars(2) && s.Chars(0) <> s.Chars(1)
     let get_bab(aba: string) = 
         [ aba.Chars(1).ToString(); aba.Chars(0).ToString(); aba.Chars(1).ToString()]
         |> List.reduce (+)
@@ -68,6 +68,6 @@ let run_day7() =
         |> Array.filter supports_ssl
         |> Array.length 
 
-    printfn "Addresses supporting TLS: %A" count_supports_tls
+    printfn "Addresses supporting SSL: %A" count_supports_ssl
 
 
