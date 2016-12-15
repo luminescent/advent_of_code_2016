@@ -13,6 +13,11 @@ each gen can move up or down, alone or with its microchip
 
 open System.Collections.Generic
 
+let rec combinations l n = 
+    match n, l with
+    | 0, _ -> [[]]
+    | _, [] -> []
+    | k, (x::xs) -> List.map ((@) [x]) (combinations xs (k-1) ) @ combinations xs k 
 
 type Generator = string 
 type Microchip = string 
@@ -163,7 +168,26 @@ let generateGeneratorMoves testingFacility fromFloor toFloor  =
 
 
 let generateGeneratorsMoves testingFacility fromFloor toFloor = 
-    []: Moves list 
+    (* we can move 2 generators if they don't orphan their chips or their chips are at the destination and no others are there *) 
+    let fromF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = fromFloor)).Value
+    let toF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = toFloor)).Value
+
+    let checkGenerators g1 g2 = 
+        match fromF.Microchips.Contains(g1) || fromF.Microchips.Contains(g2) with 
+        | true -> false 
+        | false -> 
+            match (toF.Microchips.Count = 0) || (toF.Microchips.Count = 2 && toF.Microchips.Contains(g1) && toF.Microchips.Contains(g2)) with 
+            | true -> true
+            | _ -> false 
+
+    let generatorPairs = combinations (fromF.Generators |> Set.toList ) 2 
+
+    generatorPairs
+    |> List.filter (fun pair -> checkGenerators pair.[0] pair.[1])
+    |> List.map (fun pair -> Moves.Generators(pair.[0], pair.[1], fromFloor, toFloor))
+ 
+
+
 let generateGeneratorMicrochipMoves testingFacility fromFloor toFloor = 
     (*
         we can move only matching pairs 
