@@ -114,7 +114,7 @@ let applyMicrochipMove testingFacility move =
                      |> List.append ([ { toF with Microchips = toF.Microchips |> Set.add g } ])
         }
     | _ -> 
-        failwithf "called generator move without a different move %A" move
+        failwithf "called microchip move without a different move %A" move
 
 
 let applyMicrochipsMove testingFacility move = 
@@ -129,7 +129,7 @@ let applyMicrochipsMove testingFacility move =
                      |> List.append ([ { toF with Microchips = toF.Microchips |> Set.add m1 |> Set.add m2 } ])
         }
     | _ -> 
-        failwithf "called generators move without a different move %A" move 
+        failwithf "called microchips move without a different move %A" move 
 
 let applyMove testingFacility move =
     match move with 
@@ -138,6 +138,72 @@ let applyMove testingFacility move =
     | Moves.GeneratorMicrochip(_, _, _, _) -> applyGeneratorMicrochipMove testingFacility move 
     | Moves.Microchip(_, _, _) -> applyMicrochipMove testingFacility move 
     | Moves.Microchips(_, _, _, _) -> applyMicrochipsMove testingFacility move 
+
+
+let generateGeneratorMoves testingFacility fromFloor toFloor  = 
+    (* we can move a generator only if 
+        it goes to a floor where there are no chips and it doesn't orphan its own chip 
+        or goes to a floor with its own chip 
+    *)
+    let fromF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = fromFloor)).Value
+    let toF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = toFloor)).Value
+        
+    let checkGenerator g =
+        match fromF.Microchips.Contains(g) with 
+        | true -> false 
+        | false -> 
+             match (toF.Microchips.IsEmpty || (toF.Microchips.Count = 1 && toF.Microchips.Contains(g))) with 
+             | true -> true
+             | _ -> false 
+        
+    fromF.Generators 
+    |> Set.filter checkGenerator
+    |> Set.map (fun g -> Moves.Generator(g, fromFloor, toFloor))
+    |> Set.toList
+
+
+let generateGeneratorsMoves testingFacility fromFloor toFloor = 
+    []: Moves list 
+let generateGeneratorMicrochipMoves testingFacility fromFloor toFloor = 
+    (*
+        we can move only matching pairs 
+    *)
+    let fromF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = fromFloor)).Value
+    let toF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = toFloor)).Value
+    fromF.Generators
+    |> Set.filter (fun g -> fromF.Microchips.Contains(g))
+    |> Set.map (fun g -> Moves.GeneratorMicrochip(g, g, fromFloor, toFloor))
+    |> Set.toList 
+     
+let generateMicrochipMoves testingFacility fromFloor toFloor = 
+    (* we can move a microchip if we don't orphan it and only to a floor where either its generator is already there or there are no generators *)
+    let fromF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = fromFloor)).Value
+    let toF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = toFloor)).Value
+
+    let checkMicrochip m = 
+        match fromF.Generators.Contains(m) with 
+        | true -> false
+        | _ -> 
+            match (toF.Generators.IsEmpty || (toF.Generators.Count = 1 && toF.Generators.Contains(m))) with
+            | true -> true
+            | _ -> false 
+
+    fromF.Microchips
+    |> Set.filter checkMicrochip
+    |> Set.map (fun m -> Moves.Microchip(m, fromFloor, toFloor))
+    |> Set.toList
+                
+    
+let generateMicrochipsMoves testingFacility fromFloor toFloor = 
+    []: Moves list 
+
+
+let generateNextMoves testingFacility fromFloor toFloor = 
+    generateGeneratorMoves testingFacility fromFloor toFloor
+    |> List.append (generateGeneratorsMoves testingFacility fromFloor toFloor) 
+    |> List.append (generateGeneratorMicrochipMoves testingFacility fromFloor toFloor)
+    |> List.append (generateMicrochipMoves testingFacility fromFloor toFloor)
+    |> List.append (generateMicrochipsMoves testingFacility fromFloor toFloor)
 
 
 // this produces a list of valid testingFacilities; each one will count as a move 
