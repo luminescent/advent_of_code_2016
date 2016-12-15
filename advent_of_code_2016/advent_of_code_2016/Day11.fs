@@ -247,68 +247,102 @@ let getOrAddHashIfSmaller hash steps (globalState: GlobalStatesOptimalPath) =
 
 
 let rec solve finalTestCheck testingFacility currentFloor (currentStates: Set<string>) (globalOptimalStates: GlobalStatesOptimalPath) currentStepsCount = 
-    match finalTestCheck testingFacility currentFloor with 
-    | true -> // update the global minimum 
-        let stateHash = getTestingFacilityHash testingFacility currentFloor 
-        let currentOptimalPathToCurrentState = getOrAddHashIfSmaller stateHash currentStepsCount globalOptimalStates
-        currentOptimalPathToCurrentState |> ignore
-    | _ -> 
-        let stateHash = getTestingFacilityHash testingFacility currentFloor 
-        // is our performance way crappier than the globalStateOne? 
-        let currentOptimalPathToCurrentState = getOrAddHashIfSmaller stateHash currentStepsCount globalOptimalStates
-
-        match currentOptimalPathToCurrentState < currentStepsCount with 
-        | true -> () // this will halt processing as this tree is suboptimal 
+    match currentStepsCount > 100 with
+    | true -> () // this is a bad one so we drop it 
+    | false -> 
+        match finalTestCheck testingFacility currentFloor with 
+        | true -> // update the global minimum 
+            let stateHash = getTestingFacilityHash testingFacility currentFloor 
+            let currentOptimalPathToCurrentState = getOrAddHashIfSmaller stateHash currentStepsCount globalOptimalStates
+            printfn "Optimal number of steps to a solution found so far: %A" currentOptimalPathToCurrentState 
         | _ -> 
-            // are we in a state that we've seen before? => infinite loop 
-            match currentStates.Contains stateHash with 
-            | true -> () // we halt processing on this tree 
-            | false -> 
-                let newCurrentStates = currentStates.Add stateHash 
-                // we generate all possible states 
-                let nextFloors = 
-                    match currentFloor with 
-                    | 0 -> [ 1 ]
-                    | 3 -> [ 2 ]
-                    | _ -> [currentFloor + 1; currentFloor - 1]
-                
-                //printfn "%A" currentStates
-                let moves = 
-                    nextFloors
-                    |> List.collect (fun floor -> (generateNextMoves testingFacility currentFloor floor) |> List.map (fun m -> (floor, m)))
-                let appliedMoves = 
-                    moves 
-                    |> List.map (fun (floor, move) -> (floor, applyMove testingFacility move))
+            let stateHash = getTestingFacilityHash testingFacility currentFloor 
+            // is our performance way crappier than the globalStateOne? 
+            let currentOptimalPathToCurrentState = getOrAddHashIfSmaller stateHash currentStepsCount globalOptimalStates
 
-                appliedMoves
-                    |> List.iter (fun (floor, newState) -> solve finalTestCheck newState floor newCurrentStates globalOptimalStates (currentStepsCount + 1))
+            match currentOptimalPathToCurrentState < currentStepsCount with 
+            | true -> () // this will halt processing as this tree is suboptimal 
+            | _ -> 
+                // are we in a state that we've seen before? => infinite loop 
+                match currentStates.Contains stateHash with 
+                | true -> () // we halt processing on this tree 
+                | false -> 
+                    let newCurrentStates = currentStates.Add stateHash 
+                    // we generate all possible states 
+                    let nextFloors = 
+                        match currentFloor with 
+                        | 0 -> [ 1 ]
+                        | 3 -> [ 2 ]
+                        | _ -> [currentFloor + 1; currentFloor - 1]
+                
+                    //printfn "%A" currentStates
+                    let moves = 
+                        nextFloors
+                        |> List.collect (fun floor -> (generateNextMoves testingFacility currentFloor floor) |> List.map (fun m -> (floor, m)))
+                    let appliedMoves = 
+                        moves 
+                        |> List.map (fun (floor, move) -> (floor, applyMove testingFacility move))
+
+                    appliedMoves
+                        |> List.iter (fun (floor, newState) -> solve finalTestCheck newState floor newCurrentStates globalOptimalStates (currentStepsCount + 1))
                                  
 
 
-let run_day11() = 
-    let testingFacility = {
-        Floors = 
-        [
-            { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList ["H"; "L"] }
-            { Index = 1; Generators = Set.ofList ["H"] ; Microchips = Set.ofList [] }
-            { Index = 2; Generators = Set.ofList ["L"] ; Microchips = Set.ofList [] }
-            { Index = 3; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-        ]
-    }
+let run_day11() =
+    let run_for_test() =      
+        let testingFacility = {
+            Floors = 
+            [
+                { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList ["H"; "L"] }
+                { Index = 1; Generators = Set.ofList ["H"] ; Microchips = Set.ofList [] }
+                { Index = 2; Generators = Set.ofList ["L"] ; Microchips = Set.ofList [] }
+                { Index = 3; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+            ]
+        }
 
-    let expectedResult = {
-        Floors = 
-        [
-            { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-            { Index = 1; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-            { Index = 2; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-            { Index = 3; Generators = Set.ofList ["H"; "L"] ; Microchips = Set.ofList ["H"; "L"] }
-        ]
-    }
+        let expectedResult = {
+            Floors = 
+            [
+                { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+                { Index = 1; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+                { Index = 2; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+                { Index = 3; Generators = Set.ofList ["H"; "L"] ; Microchips = Set.ofList ["H"; "L"] }
+            ]
+        }
 
-    let globalStates = new GlobalStatesOptimalPath()
+        let globalStates = new GlobalStatesOptimalPath()
 
-    solve isFinalStateTest testingFacility 0 (Set.ofList []) globalStates 0  
+        solve isFinalStateTest testingFacility 0 (Set.ofList []) globalStates 0  
 
-    let finalHash = getTestingFacilityHash expectedResult 3 
-    printfn "Optimal number of steps: %A" globalStates.[finalHash]
+        let finalHash = getTestingFacilityHash expectedResult 3 
+        printfn "Optimal number of steps: %A" globalStates.[finalHash]
+
+    let run_part1() = 
+        let testingFacility = {
+            Floors = 
+            [
+                { Index = 0; Generators = Set.ofList ["PR"] ; Microchips = Set.ofList ["PR"] }
+                { Index = 1; Generators = Set.ofList ["CO"; "CR"; "RU"; "PL"] ; Microchips = Set.ofList [] }
+                { Index = 2; Generators = Set.ofList [] ; Microchips = Set.ofList ["CO"; "CR"; "RU"; "PL"] }
+                { Index = 3; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+            ]
+        }
+
+        let expectedResult = {
+            Floors = 
+            [
+                { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+                { Index = 1; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+                { Index = 2; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+                { Index = 3; Generators = Set.ofList ["PR"; "CO"; "CR"; "RU"; "PL"] ; Microchips = Set.ofList ["PR"; "CO"; "CR"; "RU"; "PL"] }
+            ]
+        }
+
+        let globalStates = new GlobalStatesOptimalPath()
+
+        solve isFinalStatePart1 testingFacility 0 (Set.ofList []) globalStates 0  
+
+        let finalHash = getTestingFacilityHash expectedResult 3 
+        printfn "Optimal number of steps: %A" globalStates.[finalHash]
+
+    run_part1()
