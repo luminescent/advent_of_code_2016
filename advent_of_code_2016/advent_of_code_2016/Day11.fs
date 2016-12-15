@@ -136,6 +136,15 @@ let applyMove testingFacility move =
     | Moves.Microchips(_, _, _, _) -> applyMicrochipsMove testingFacility move 
 
 
+let floorIsValid floor = 
+    // floor is valid if it does not contain an unprotected chip 
+    let friedChip = 
+        floor.Microchips
+        |> Set.filter (fun m -> (floor.Generators.Count > 0) && not(floor.Generators.Contains(m)))
+        |> Set.count
+    friedChip = 0 
+
+
 let generateGeneratorMoves testingFacility fromFloor toFloor  = 
     let fromF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = fromFloor)).Value
     let toF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = toFloor)).Value
@@ -247,7 +256,7 @@ let getOrAddHashIfSmaller hash steps (globalState: GlobalStatesOptimalPath) =
 
 
 let rec solve finalTestCheck testingFacility currentFloor (currentStates: Set<string>) (globalOptimalStates: GlobalStatesOptimalPath) currentStepsCount = 
-    match currentStepsCount > 100 with
+    match currentStepsCount > 40 with
     | true -> () // this is a bad one so we drop it 
     | false -> 
         match finalTestCheck testingFacility currentFloor with 
