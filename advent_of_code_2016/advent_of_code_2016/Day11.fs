@@ -2,9 +2,9 @@
 
 (*
 allowed moves:
-- 2 generators if there aren't orphaning their chips 
-- 1 generator if it isn't orpahning its chip 
-- 
+- 2 generators if they aren't orphaning their chips nor killing other chips
+- 1 generator if it isn't orpahning its chip etc
+- etc 
 
 each gen can move up or down, alone or with its microchip 
 
@@ -219,7 +219,23 @@ let generateMicrochipMoves testingFacility fromFloor toFloor =
                 
     
 let generateMicrochipsMoves testingFacility fromFloor toFloor = 
-    []: Moves list 
+    (* we can move 2 microchips if we don't orpan them and to a floor where their generators are there or there are no generators *) 
+    let fromF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = fromFloor)).Value
+    let toF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = toFloor)).Value
+
+    let checkMicrochips m1 m2 = 
+        match fromF.Generators.Contains(m1) || fromF.Generators.Contains(m2) with 
+        | true -> false 
+        | false -> 
+            match (toF.Generators.Count = 0) || (toF.Generators.Count = 2 && toF.Generators.Contains(m1) && toF.Generators.Contains(m2)) with 
+            | true -> true
+            | _ -> false 
+
+    let microchipPairs = combinations (fromF.Microchips |> Set.toList ) 2 
+
+    microchipPairs
+    |> List.filter (fun pair -> checkMicrochips pair.[0] pair.[1])
+    |> List.map (fun pair -> Moves.Microchips(pair.[0], pair.[1], fromFloor, toFloor))
 
 
 let generateNextMoves testingFacility fromFloor toFloor = 
@@ -228,6 +244,7 @@ let generateNextMoves testingFacility fromFloor toFloor =
     |> List.append (generateGeneratorMicrochipMoves testingFacility fromFloor toFloor)
     |> List.append (generateMicrochipMoves testingFacility fromFloor toFloor)
     |> List.append (generateMicrochipsMoves testingFacility fromFloor toFloor)
+
 
 
 // this produces a list of valid testingFacilities; each one will count as a move 
