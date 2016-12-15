@@ -40,14 +40,16 @@ type Moves =
     | Microchips of Microchip1: Microchip * Microchip2: Microchip * CurrentFloor: int * NewFloor: int 
 
 let getFloorHash floor = 
-    [| floor.Index.ToString() |] 
+    [| floor.Index.ToString(); "Floor; " |] 
     |> Array.append (floor.Generators |> Set.toArray |> Array.sort )
+    |> Array.append [| " Microchips: " |]
     |> Array.append (floor.Microchips |> Set.toArray |> Array.sort )
+    |> Array.append [| "Generators: " |]
     |> Array.rev
     |> String.concat ";"
 
 let getTestingFacilityHash testingFacility currentFloor = 
-    [| currentFloor.ToString() |]
+    [| currentFloor.ToString(); "Current Floor: " |]
     |> Array.append ( testingFacility.Floors |> List.sortBy (fun f -> f.Index) |> List.map getFloorHash |> List.toArray)
     |> Array.rev
     |> String.concat ";"
@@ -116,7 +118,7 @@ let applyMicrochipMove testingFacility move =
             Floors = testingFacility.Floors
                      |> List.filter (fun f -> f.Index <> fromFloor && f.Index <> toFloor)
                      |> List.append ([ { fromF with Microchips = fromF.Microchips |> Set.remove m  } ])
-                     |> List.append ([ { toF with Microchips = toF.Microchips |> Set.add g } ])
+                     |> List.append ([ { toF with Microchips = toF.Microchips |> Set.add m } ])
         }
     | _ -> 
         failwithf "called microchip move without a different move %A" move
@@ -239,11 +241,15 @@ let generateMicrochipsMoves testingFacility fromFloor toFloor =
 
 
 let generateNextMoves testingFacility fromFloor toFloor = 
-    generateGeneratorMoves testingFacility fromFloor toFloor
-    |> List.append (generateGeneratorsMoves testingFacility fromFloor toFloor) 
-    |> List.append (generateGeneratorMicrochipMoves testingFacility fromFloor toFloor)
-    |> List.append (generateMicrochipMoves testingFacility fromFloor toFloor)
-    |> List.append (generateMicrochipsMoves testingFacility fromFloor toFloor)
+    let moves = 
+        generateGeneratorMoves testingFacility fromFloor toFloor
+        |> List.append (generateGeneratorsMoves testingFacility fromFloor toFloor) 
+        |> List.append (generateGeneratorMicrochipMoves testingFacility fromFloor toFloor)
+        |> List.append (generateMicrochipMoves testingFacility fromFloor toFloor)
+        |> List.append (generateMicrochipsMoves testingFacility fromFloor toFloor)
+    printfn "Moves: %A" (moves |> List.map (fun m -> sprintf "%A" m) |> String.concat ", ")
+    moves 
+
 
 let getOrAddHashIfSmaller hash steps (globalState: GlobalStatesOptimalPath) = 
     match globalState.ContainsKey hash with 
@@ -279,6 +285,7 @@ let rec solve finalTestCheck testingFacility currentFloor (currentStates: Set<st
                     | 3 -> [ 2 ]
                     | _ -> [currentFloor + 1; currentFloor - 1]
                 
+                printfn "%A" currentStates
                 let moves = 
                     nextFloors
                     |> List.collect (fun floor -> (generateNextMoves testingFacility currentFloor floor) |> List.map (fun m -> (floor, m)))
@@ -302,4 +309,19 @@ let run_day11() =
         ]
     }
 
-    solve 
+    let expectedResult = {
+        Floors = 
+        [
+            { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+            { Index = 1; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+            { Index = 2; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+            { Index = 3; Generators = Set.ofList ["H"; "L"] ; Microchips = Set.ofList ["H"; "L"] }
+        ]
+    }
+
+    let globalStates = new GlobalStatesOptimalPath()
+
+    solve isFinalStateTest testingFacility 0 (Set.ofList []) globalStates 0  
+
+    let finalHash = getTestingFacilityHash expectedResult 3 
+    printfn "Optimal number of steps: %A" globalStates.[finalHash]
