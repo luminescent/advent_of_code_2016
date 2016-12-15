@@ -32,6 +32,35 @@ let main argv =
     //run_day10()
     run_day11()
 
+//    let testingFacility = {
+//        Floors = 
+//        [
+//            { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+//            { Index = 1; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+//            { Index = 2; Generators = Set.ofList ["L";"H"] ; Microchips = Set.ofList ["H"; "L"] }
+//            { Index = 3; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+//        ]
+//    }
+//
+//    let moves = generateNextMoves testingFacility 2 3 
+//    printfn "%A" moves 
+//    let movesDown = generateNextMoves testingFacility 2 1 
+//    printfn "%A" movesDown
+//
+//    let testingFacility = {
+//        Floors = 
+//        [
+//            { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+//            { Index = 1; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+//            { Index = 2; Generators = Set.ofList ["L";"H"] ; Microchips = Set.ofList [] }
+//            { Index = 3; Generators = Set.ofList [] ; Microchips = Set.ofList ["H"; "L"] }
+//        ]
+//    }
+//
+//    let moves = generateNextMoves testingFacility 3 2 
+//    printfn "%A" moves 
+
+
 //    printfn "%s" (getTestingFacilityHash  { Floors = [ {Index = 0; Generators = set ["G2"; "G1"]; Microchips = set ["M1"; "M2"] } ; {Index = 1; Generators = set ["G3"; "G4"]; Microchips = set ["M3"; "M4"] } ;]} 1 )
 //    printfn "%s" (getTestingFacilityHash  { Floors = [ {Index = 0; Generators = set ["G2"; "G1"]; Microchips = set ["M1"; "M2"] } ; {Index = 1; Generators = set ["G3"; "G4"]; Microchips = set ["M3"; "M4"] } ;]} 0 )
 //    printfn "%s" (getTestingFacilityHash  { Floors = [ {Index = 1; Generators = set ["G3"; "G4"]; Microchips = set ["M3"; "M4"] } ; {Index = 0; Generators = set ["G2"; "G1"]; Microchips = set ["M1"; "M2"] } ;]} 1 )

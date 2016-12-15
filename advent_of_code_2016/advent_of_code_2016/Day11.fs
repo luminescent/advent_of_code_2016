@@ -1,16 +1,5 @@
 ﻿module Day11
 
-(*
-allowed moves:
-- 2 generators if they aren't orphaning their chips nor killing other chips
-- 1 generator if it isn't orpahning its chip etc
-- etc 
-
-each gen can move up or down, alone or with its microchip 
-
-
-*)
-
 open System.Collections.Generic
 
 let rec combinations l n = 
@@ -148,20 +137,20 @@ let applyMove testingFacility move =
 
 
 let generateGeneratorMoves testingFacility fromFloor toFloor  = 
-    (* we can move a generator only if 
-        it goes to a floor where there are no chips and it doesn't orphan its own chip 
-        or goes to a floor with its own chip 
-    *)
     let fromF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = fromFloor)).Value
     let toF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = toFloor)).Value
         
-    let checkGenerator g =
-        match fromF.Microchips.Contains(g) with 
-        | true -> false 
-        | false -> 
-             match (toF.Microchips.IsEmpty || (toF.Microchips.Count = 1 && toF.Microchips.Contains(g))) with 
-             | true -> true
-             | _ -> false 
+    let checkGenerator g = 
+        match fromF.Microchips.Contains(g) && fromF.Generators.Count > 1 with 
+        | true -> false  // we orphan its chip with other generators around 
+        | _ -> // we check the destinatoins to not fry anything 
+            match toF.Generators.Count > 0 with
+            | true -> true // it's safe to move it there as all other chips, if any, are already protected (since we move to a valid state)
+            | _ -> match toF.Microchips.Count with 
+                    | 0 -> true
+                    | 1 -> toF.Microchips.Contains (g) // its pair
+                    | _ -> false    // we fry other chips 
+
         
     fromF.Generators 
     |> Set.filter checkGenerator
@@ -170,17 +159,16 @@ let generateGeneratorMoves testingFacility fromFloor toFloor  =
 
 
 let generateGeneratorsMoves testingFacility fromFloor toFloor = 
-    (* we can move 2 generators if they don't orphan their chips or their chips are at the destination and no others are there *) 
     let fromF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = fromFloor)).Value
     let toF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = toFloor)).Value
 
     let checkGenerators g1 g2 = 
-        match fromF.Microchips.Contains(g1) || fromF.Microchips.Contains(g2) with 
+        match (fromF.Microchips.Contains(g1) || fromF.Microchips.Contains(g2)) && fromF.Generators.Count > 2 with 
         | true -> false 
         | false -> 
-            match (toF.Microchips.Count = 0) || (toF.Microchips.Count = 2 && toF.Microchips.Contains(g1) && toF.Microchips.Contains(g2)) with 
-            | true -> true
-            | _ -> false 
+            match (toF.Generators.Count = 0) && (toF.Microchips.Remove(g1).Remove(g2).Count > 0) with 
+            | true -> false 
+            | _ -> false  
 
     let generatorPairs = combinations (fromF.Generators |> Set.toList ) 2 
 
@@ -202,17 +190,14 @@ let generateGeneratorMicrochipMoves testingFacility fromFloor toFloor =
     |> Set.toList 
      
 let generateMicrochipMoves testingFacility fromFloor toFloor = 
-    (* we can move a microchip if we don't orphan it and only to a floor where either its generator is already there or there are no generators *)
+    (* make sure it goes to a floor with 0 generators or its pair generator *)
     let fromF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = fromFloor)).Value
     let toF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = toFloor)).Value
 
-    let checkMicrochip m = 
-        match fromF.Generators.Contains(m) with 
-        | true -> false
-        | _ -> 
-            match (toF.Generators.IsEmpty || (toF.Generators.Count = 1 && toF.Generators.Contains(m))) with
-            | true -> true
-            | _ -> false 
+    let checkMicrochip m =         
+        match (toF.Generators.IsEmpty || (toF.Generators.Contains(m))) with
+        | true -> true
+        | _ -> false 
 
     fromF.Microchips
     |> Set.filter checkMicrochip
@@ -221,17 +206,16 @@ let generateMicrochipMoves testingFacility fromFloor toFloor =
                 
     
 let generateMicrochipsMoves testingFacility fromFloor toFloor = 
-    (* we can move 2 microchips if we don't orpan them and to a floor where their generators are there or there are no generators *) 
+    (* when we move chips away 
+        if their generator is on the floor, we have to check we're not frying the remainers  
+     *) 
     let fromF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = fromFloor)).Value
     let toF = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = toFloor)).Value
 
     let checkMicrochips m1 m2 = 
-        match fromF.Generators.Contains(m1) || fromF.Generators.Contains(m2) with 
-        | true -> false 
-        | false -> 
-            match (toF.Generators.Count = 0) || (toF.Generators.Count = 2 && toF.Generators.Contains(m1) && toF.Generators.Contains(m2)) with 
-            | true -> true
-            | _ -> false 
+        match (toF.Generators.Count = 0) || (toF.Generators.Contains(m1) && toF.Generators.Contains(m2)) with 
+        | true -> true
+        | _ -> false 
 
     let microchipPairs = combinations (fromF.Microchips |> Set.toList ) 2 
 
@@ -247,7 +231,7 @@ let generateNextMoves testingFacility fromFloor toFloor =
         |> List.append (generateGeneratorMicrochipMoves testingFacility fromFloor toFloor)
         |> List.append (generateMicrochipMoves testingFacility fromFloor toFloor)
         |> List.append (generateMicrochipsMoves testingFacility fromFloor toFloor)
-    printfn "Moves: %A" (moves |> List.map (fun m -> sprintf "%A" m) |> String.concat ", ")
+    //printfn "Moves: %A" (moves |> List.map (fun m -> sprintf "%A" m) |> String.concat ", ")
     moves 
 
 
@@ -264,7 +248,10 @@ let getOrAddHashIfSmaller hash steps (globalState: GlobalStatesOptimalPath) =
 
 let rec solve finalTestCheck testingFacility currentFloor (currentStates: Set<string>) (globalOptimalStates: GlobalStatesOptimalPath) currentStepsCount = 
     match finalTestCheck testingFacility currentFloor with 
-    | true -> ()
+    | true -> // update the global minimum 
+        let stateHash = getTestingFacilityHash testingFacility currentFloor 
+        let currentOptimalPathToCurrentState = getOrAddHashIfSmaller stateHash currentStepsCount globalOptimalStates
+        currentOptimalPathToCurrentState |> ignore
     | _ -> 
         let stateHash = getTestingFacilityHash testingFacility currentFloor 
         // is our performance way crappier than the globalStateOne? 
@@ -285,7 +272,7 @@ let rec solve finalTestCheck testingFacility currentFloor (currentStates: Set<st
                     | 3 -> [ 2 ]
                     | _ -> [currentFloor + 1; currentFloor - 1]
                 
-                printfn "%A" currentStates
+                //printfn "%A" currentStates
                 let moves = 
                     nextFloors
                     |> List.collect (fun floor -> (generateNextMoves testingFacility currentFloor floor) |> List.map (fun m -> (floor, m)))
