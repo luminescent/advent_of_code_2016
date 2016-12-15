@@ -60,10 +60,10 @@ let isFinalState finalFloor generatorsCount microchipsCount testingFacility floo
         let ff = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = floor)).Value
         ff.Generators.Count = generatorsCount && ff.Microchips.Count = microchipsCount 
 
-let isFinalStateTest testingFacility floor = isFinalState 3 2 2 
-let isFinalStatePart1 testingFacility floor = isFinalState 3 5 5 
+let isFinalStateTest testingFacility floor = isFinalState 3 2 2 testingFacility floor
+let isFinalStatePart1 testingFacility floor = isFinalState 3 5 5 testingFacility floor
 
-let GlobalStatesOptimalPath = Dictionary<string, int>()
+type GlobalStatesOptimalPath = Dictionary<string, int>
 
 let applyGeneratorMove testingFacility move = 
     match move with 
@@ -245,8 +245,61 @@ let generateNextMoves testingFacility fromFloor toFloor =
     |> List.append (generateMicrochipMoves testingFacility fromFloor toFloor)
     |> List.append (generateMicrochipsMoves testingFacility fromFloor toFloor)
 
+let getOrAddHashIfSmaller hash steps (globalState: GlobalStatesOptimalPath) = 
+    match globalState.ContainsKey hash with 
+    | false -> 
+        globalState.Add(hash, steps)
+    | _ -> 
+        let value = globalState.[hash] 
+        if (value > steps) then 
+            globalState.[hash] <- steps 
+    globalState.[hash]
 
 
-// this produces a list of valid testingFacilities; each one will count as a move 
-//type nextPossibleStates testingFacility currentFloor currentStates globalOptimalStates = 
-    
+let rec solve finalTestCheck testingFacility currentFloor (currentStates: Set<string>) (globalOptimalStates: GlobalStatesOptimalPath) currentStepsCount = 
+    match finalTestCheck testingFacility currentFloor with 
+    | true -> ()
+    | _ -> 
+        let stateHash = getTestingFacilityHash testingFacility currentFloor 
+        // is our performance way crappier than the globalStateOne? 
+        let currentOptimalPathToCurrentState = getOrAddHashIfSmaller stateHash currentStepsCount globalOptimalStates
+
+        match currentOptimalPathToCurrentState < currentStepsCount with 
+        | true -> () // this will halt processing as this tree is suboptimal 
+        | _ -> 
+            // are we in a state that we've seen before? => infinite loop 
+            match currentStates.Contains stateHash with 
+            | true -> () // we halt processing on this tree 
+            | false -> 
+                let newCurrentStates = currentStates.Add stateHash 
+                // we generate all possible states 
+                let nextFloors = 
+                    match currentFloor with 
+                    | 0 -> [ 1 ]
+                    | 3 -> [ 2 ]
+                    | _ -> [currentFloor + 1; currentFloor - 1]
+                
+                let moves = 
+                    nextFloors
+                    |> List.collect (fun floor -> (generateNextMoves testingFacility currentFloor floor) |> List.map (fun m -> (floor, m)))
+                let appliedMoves = 
+                    moves 
+                    |> List.map (fun (floor, move) -> (floor, applyMove testingFacility move))
+
+                appliedMoves
+                    |> List.iter (fun (floor, newState) -> solve finalTestCheck newState floor newCurrentStates globalOptimalStates (currentStepsCount + 1))
+                                 
+
+
+let run_day11() = 
+    let testingFacility = {
+        Floors = 
+        [
+            { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList ["H"; "L"] }
+            { Index = 1; Generators = Set.ofList ["H"] ; Microchips = Set.ofList [] }
+            { Index = 2; Generators = Set.ofList ["L"] ; Microchips = Set.ofList [] }
+            { Index = 3; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
+        ]
+    }
+
+    solve 
