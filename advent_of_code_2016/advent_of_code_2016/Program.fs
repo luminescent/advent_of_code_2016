@@ -11,6 +11,7 @@ open Day7
 open Day8
 open Day9
 open Day10
+open Day11
 open Microsoft.FSharp.Core.Operators 
 open System
 
@@ -28,8 +29,9 @@ let main argv =
     //run_day7()
     //run_day8()
     //run_day9()
-    run_day10()
+    //run_day10()
 
+    printfn "%s" (getTestingFacilityHash  { Floors = [ {Index = 0; Generators = set ["G2"; "G1"]; Microchips = set ["M1"; "M2"] } ; {Index = 0; Generators = set ["G3"; "G4"]; Microchips = set ["M3"; "M4"] }]} 1 )
 
 //    ["(3x3)XYZ"; "X(8x2)(3x3)ABCY"; "(27x12)(20x12)(13x14)(7x10)(1x12)A"; "(25x3)(3x3)ABC(2x3)XY(5x2)PQRSTX(18x9)(3x2)TWO(5x7)SEVEN"]
 //    |> List.iter (fun input -> printfn "%A" (get_decompress_length2 input 0 0) )

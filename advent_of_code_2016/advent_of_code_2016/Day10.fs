@@ -25,11 +25,6 @@ type Bots = Dictionary<int, Bot>
 
 type Outputs = Dictionary<int, Output> 
 
-
-type ParsingInstructionResult = 
-    | StateInitialization of Bot*BotState
-    | Bot of Bot 
-
 let getOrAddBot (bots: Bots) index = 
     match bots.ContainsKey(index) with 
     | true -> bots.[index]
