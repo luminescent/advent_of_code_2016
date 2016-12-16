@@ -18,21 +18,17 @@ let computeHash salt i =
     md5Hash.ToLower()
 
 let computeHashPart2 salt i = 
-    let md5Hash = computeHash salt i
-    let hashOfHash = 
-        [1..2016]
-        |> List.fold (fun acc i -> computeMd5(acc).ToLower()) md5Hash
-    hashOfHash 
+    [1..2016]
+    |> List.fold (fun acc _ -> computeMd5(acc).ToLower()) (computeHash salt i)
+
 
 let getFirstTriplet (s: string) = 
     s.ToCharArray()
     |> Array.tryFind(fun c -> s.Contains(System.String(c, 3)))
-    //|> Option.map (fun c -> System.String(c, 3))
     
 
 let isKey item (next1000: Next1000Hashes) = 
-    let triplet = item |> getFirstTriplet
-    match triplet with 
+    match item |> getFirstTriplet with 
     | None -> false
     | Some(c) -> 
         let quintet = System.String(c, 5)
@@ -63,10 +59,9 @@ let rec findKey salt computeHash keyRank index (next1000: Next1000Hashes) =
         findKey salt computeHash newKeyRank (index + 1) next1000 
 
 let run_day14() = 
-    let index = findKey "ihaygndm" computeHashPart2 65 0 (new Dictionary<int, string>())
+    let index = findKey "abc" computeHashPart2 65 0 (new Dictionary<int, string>())
     printfn "%i" index 
-//
-//    printfn "%s" (computeHashPart2 "abc" 0)
+
 
 
 
