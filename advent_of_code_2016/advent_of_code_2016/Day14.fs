@@ -59,7 +59,7 @@ let rec findKey salt computeHash keyRank index (next1000: Next1000Hashes) =
         findKey salt computeHash newKeyRank (index + 1) next1000 
 
 let run_day14() = 
-    let index = findKey "abc" computeHashPart2 65 0 (new Dictionary<int, string>())
+    let index = findKey "ihaygndm" computeHashPart2 64 0 (new Dictionary<int, string>())
     printfn "%i" index 
 
 
