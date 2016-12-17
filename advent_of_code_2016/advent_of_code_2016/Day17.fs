@@ -143,6 +143,34 @@ let runMax passcode =
 
     bestPath     
 
+let runMaxDFS passcode = 
+    let mutable maxPath = 0 
+    let mutable bestPath = []
+    let startCoordinates = (0, 0)
+    let allowedMoves = 
+        (getAllowedMoves (getHash passcode []) startCoordinates) 
+        |> List.map( fun (move, _) -> move) |> Set.ofList 
+     
+    let startRoomState = { Coordinates = (0, 0); AllowedMoves = allowedMoves; Path = []}
+
+    let q = new Stack<RoomState>()
+    q.Push startRoomState
+
+    while q.Count > 0 do 
+        let currentState = q.Pop()
+        if isFinalState currentState then 
+            printfn "Found a solution: %A with length of path %i" currentState currentState.Path.Length 
+            if currentState.Path.Length > maxPath then 
+                maxPath <- currentState.Path.Length 
+                bestPath <- currentState.Path 
+        else 
+            if currentState.Path.Length <= 2000  then // best guess...       
+                let nextStates = getNextRoomStates currentState passcode 
+                nextStates
+                |> List.iter (fun s -> q.Push s)
+
+    bestPath     
+
 let run_part1() = 
     let bestPath = run "ihgpwlah" 
     printfn "Min path: %s" (pathToString bestPath)
@@ -169,7 +197,7 @@ let run_part2() =
 //
     let stopWatch = new System.Diagnostics.Stopwatch()
     stopWatch.Start()
-    let bestPath = runMax "vwbaicqe" 
+    let bestPath = runMaxDFS "hhhxzeay" 
     printfn "Max path length: %i" (pathToString bestPath).Length
     stopWatch.Stop()
     printfn "%A" stopWatch.Elapsed.TotalSeconds
@@ -178,7 +206,7 @@ let run_part2() =
 
 let run_day17() = 
     
-    run_part1()
+    // run_part1()
     run_part2()
 
 
