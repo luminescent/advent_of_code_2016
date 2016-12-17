@@ -2,6 +2,7 @@
 
 open System.Collections.Generic
 open System
+open System.Diagnostics.PerformanceData
 
 type Move = 
     | D = 'D'
@@ -107,8 +108,7 @@ let run passcode =
                 minPath <- currentState.Path.Length 
                 bestPath <- currentState.Path 
         else 
-            if currentState.Path.Length <= (min 100 minPath)  then 
-                let signature = getRoomStateSignature currentState       
+            if currentState.Path.Length <= (min 100 minPath)  then      
                 let nextStates = getNextRoomStates currentState passcode 
                 nextStates
                 |> List.iter (fun s -> q.Enqueue(s))
@@ -136,8 +136,7 @@ let runMax passcode =
                 maxPath <- currentState.Path.Length 
                 bestPath <- currentState.Path 
         else 
-            if currentState.Path.Length <= 2000  then // best guess... 
-                let signature = getRoomStateSignature currentState         
+            if currentState.Path.Length <= 2000  then // best guess...       
                 let nextStates = getNextRoomStates currentState passcode 
                 nextStates
                 |> List.iter (fun s -> q.Enqueue(s))
@@ -168,12 +167,18 @@ let run_part2() =
 //    let bestPath = runMax "ulqzkmiv" 
 //    printfn "Min path: %s" (pathToString bestPath)
 //
+    let stopWatch = new System.Diagnostics.Stopwatch()
+    stopWatch.Start()
     let bestPath = runMax "vwbaicqe" 
     printfn "Max path length: %i" (pathToString bestPath).Length
+    stopWatch.Stop()
+    printfn "%A" stopWatch.Elapsed.TotalSeconds
+
 
 
 let run_day17() = 
     
+    run_part1()
     run_part2()
 
 
