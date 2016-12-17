@@ -14,7 +14,6 @@ type DoorState =
     | Closed
 
 type RoomState = { Coordinates: int*int; AllowedMoves: Set<Move>; Path: Move list}
-//type VisitedRoomStates = Dictionary<string, RoomState>
 
 let getRoomStateSignature roomState = 
     roomState.AllowedMoves 
@@ -87,15 +86,13 @@ let pathToString (moves: Move list) =
     |> List.map (fun m -> m.ToString()) 
     |> String.concat ""
 
-let run passcode = 
-    
+let run passcode =     
     let mutable minPath = 10000 
     let mutable bestPath = []
     let startCoordinates = (0, 0)
     let allowedMoves = 
         (getAllowedMoves (getHash passcode []) startCoordinates) 
         |> List.map( fun (move, _) -> move) |> Set.ofList
-    let visited = new Dictionary<string, int>() // roomState signature and path length to it 
      
     let startRoomState = { Coordinates = (0, 0); AllowedMoves = allowedMoves; Path = []}
 
@@ -111,18 +108,43 @@ let run passcode =
                 bestPath <- currentState.Path 
         else 
             if currentState.Path.Length <= (min 100 minPath)  then 
-                let signature = getRoomStateSignature currentState 
-                //if not(visited.ContainsKey(signature)) || (visited.[signature] > currentState.Path.Length) then             
+                let signature = getRoomStateSignature currentState       
                 let nextStates = getNextRoomStates currentState passcode 
                 nextStates
                 |> List.iter (fun s -> q.Enqueue(s))
-                //visited.[signature] <- currentState.Path.Length
 
     bestPath 
 
+let runMax passcode = 
+    let mutable maxPath = 0 
+    let mutable bestPath = []
+    let startCoordinates = (0, 0)
+    let allowedMoves = 
+        (getAllowedMoves (getHash passcode []) startCoordinates) 
+        |> List.map( fun (move, _) -> move) |> Set.ofList 
+     
+    let startRoomState = { Coordinates = (0, 0); AllowedMoves = allowedMoves; Path = []}
 
-let run_day17() = 
+    let q = new Queue<RoomState>()
+    q.Enqueue startRoomState
 
+    while q.Count > 0 do 
+        let currentState = q.Dequeue()
+        if isFinalState currentState then 
+            printfn "Found a solution: %A with length of path %i" currentState currentState.Path.Length 
+            if currentState.Path.Length > maxPath then 
+                maxPath <- currentState.Path.Length 
+                bestPath <- currentState.Path 
+        else 
+            if currentState.Path.Length <= 2000  then // best guess... 
+                let signature = getRoomStateSignature currentState         
+                let nextStates = getNextRoomStates currentState passcode 
+                nextStates
+                |> List.iter (fun s -> q.Enqueue(s))
+
+    bestPath     
+
+let run_part1() = 
     let bestPath = run "ihgpwlah" 
     printfn "Min path: %s" (pathToString bestPath)
 
@@ -135,17 +157,26 @@ let run_day17() =
     let bestPath = run "vwbaicqe" 
     printfn "Min path: %s" (pathToString bestPath)
 
-//    let roomState = { Coordinates = (1, 1); AllowedMoves = [Move.U; Move.D] |> Set.ofList; Path = [Move.L; Move.R]}
-//    printfn "%A" ([Move.D] |> List.append roomState.Path)
-//    printfn "%s" (getRoomStateSignature roomState)
+
+let run_part2() = 
+//    let bestPath = runMax "ihgpwlah" 
+//    printfn "Max path length: %i" (pathToString bestPath).Length
+
+//    let bestPath = runMax "kglvqrro" 
+//    printfn "Min path: %s" (pathToString bestPath)
 //
-//    let roomState = { Coordinates = (1, 1); AllowedMoves = [Move.D; Move.U; Move.L] |> Set.ofList; Path = [Move.L; Move.R]}
-//    printfn "%s" (getRoomStateSignature roomState)
+//    let bestPath = runMax "ulqzkmiv" 
+//    printfn "Min path: %s" (pathToString bestPath)
 //
-//    printfn "%A" (getCoordinates (0, 0) Move.D)
-//    printfn "%A" (getCoordinates (0, 0) Move.U)
-//    printfn "%A" (getCoordinates (0, 0) Move.L)
-//    printfn "%A" (getCoordinates (0, 0) Move.R)
+    let bestPath = runMax "vwbaicqe" 
+    printfn "Max path length: %i" (pathToString bestPath).Length
+
+
+let run_day17() = 
+    
+    run_part2()
+
+
 
     
 
