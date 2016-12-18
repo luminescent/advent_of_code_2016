@@ -19,6 +19,8 @@ type Floor = {
 
 type TestingFacility = {
     Floors: Floor list;
+    StepsCount: int; 
+    CurrentFloor: int; 
 }
 
 type Moves = 
@@ -37,22 +39,22 @@ let getFloorHash floor =
     |> Array.rev
     |> String.concat ";"
 
-let getTestingFacilityHash testingFacility currentFloor = 
-    [| currentFloor.ToString(); "Current Floor: " |]
+let getTestingFacilityHash testingFacility = 
+    [| testingFacility.CurrentFloor.ToString(); "Current Floor: " |]
     |> Array.append ( testingFacility.Floors |> List.sortBy (fun f -> f.Index) |> List.map getFloorHash |> List.toArray)
     |> Array.rev
     |> String.concat ";"
 
 
-let isFinalState finalFloor generatorsCount microchipsCount testingFacility floor = 
-    match floor = finalFloor with 
+let isFinalState finalFloor generatorsCount microchipsCount testingFacility = 
+    match testingFacility.CurrentFloor = finalFloor with 
     | false -> false 
     | _ ->
-        let ff = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = floor)).Value
+        let ff = (testingFacility.Floors |> List.tryFind(fun f -> f.Index = finalFloor)).Value
         ff.Generators.Count = generatorsCount && ff.Microchips.Count = microchipsCount 
 
-let isFinalStateTest testingFacility floor = isFinalState 3 2 2 testingFacility floor
-let isFinalStatePart1 testingFacility floor = isFinalState 3 5 5 testingFacility floor
+let isFinalStateTest testingFacility = isFinalState 3 2 2 testingFacility 
+let isFinalStatePart1 testingFacility = isFinalState 3 5 5 testingFacility
 
 type GlobalStatesOptimalPath = Dictionary<string, int>
 
@@ -66,6 +68,8 @@ let applyGeneratorMove testingFacility move =
                      |> List.filter (fun f -> f.Index <> fromFloor && f.Index <> toFloor)
                      |> List.append ([ { fromF with Generators = fromF.Generators |> Set.remove g  } ])
                      |> List.append ([ { toF with Generators = toF.Generators |> Set.add g } ])
+            StepsCount = testingFacility.StepsCount + 1
+            CurrentFloor = toFloor
         }
     | _ -> 
         failwithf "called generator move without a different move %A" move
@@ -80,6 +84,8 @@ let applyGeneratorsMove testingFacility move =
                      |> List.filter (fun f -> f.Index <> fromFloor && f.Index <> toFloor)
                      |> List.append ([ { fromF with Generators = fromF.Generators |> Set.remove g1 |> Set.remove g2  } ])
                      |> List.append ([ { toF with Generators = toF.Generators |> Set.add g1 |> Set.add g2 } ])
+            StepsCount = testingFacility.StepsCount + 1
+            CurrentFloor = toFloor
         }
     | _ -> 
         failwithf "called generators move without a different move %A" move
@@ -94,6 +100,8 @@ let applyGeneratorMicrochipMove testingFacility move =
                      |> List.filter (fun f -> f.Index <> fromFloor && f.Index <> toFloor)
                      |> List.append ([ { fromF with Microchips = fromF.Microchips |> Set.remove m; Generators = fromF.Generators |> Set.remove g  } ])
                      |> List.append ([ { toF with Microchips = toF.Microchips |> Set.add m; Generators = toF.Generators |> Set.add g } ])
+            StepsCount = testingFacility.StepsCount + 1
+            CurrentFloor = toFloor
         }
     | _ -> 
         failwithf "called generator microchip move without a different move %A" move
@@ -108,6 +116,8 @@ let applyMicrochipMove testingFacility move =
                      |> List.filter (fun f -> f.Index <> fromFloor && f.Index <> toFloor)
                      |> List.append ([ { fromF with Microchips = fromF.Microchips |> Set.remove m  } ])
                      |> List.append ([ { toF with Microchips = toF.Microchips |> Set.add m } ])
+            StepsCount = testingFacility.StepsCount + 1
+            CurrentFloor = toFloor
         }
     | _ -> 
         failwithf "called microchip move without a different move %A" move
@@ -123,6 +133,8 @@ let applyMicrochipsMove testingFacility move =
                      |> List.filter (fun f -> f.Index <> fromFloor && f.Index <> toFloor)
                      |> List.append ([ { fromF with Microchips = fromF.Microchips |> Set.remove m1 |> Set.remove m2  } ])
                      |> List.append ([ { toF with Microchips = toF.Microchips |> Set.add m1 |> Set.add m2 } ])
+            StepsCount = testingFacility.StepsCount + 1
+            CurrentFloor = toFloor
         }
     | _ -> 
         failwithf "called microchips move without a different move %A" move 
@@ -233,7 +245,8 @@ let generateMicrochipsMoves testingFacility fromFloor toFloor =
     |> List.map (fun pair -> Moves.Microchips(pair.[0], pair.[1], fromFloor, toFloor))
 
 
-let generateNextMoves testingFacility fromFloor toFloor = 
+let generateNextMoves testingFacility toFloor = 
+    let fromFloor = testingFacility.CurrentFloor
     let moves = 
         generateGeneratorMoves testingFacility fromFloor toFloor
         |> List.append (generateGeneratorsMoves testingFacility fromFloor toFloor) 
@@ -255,17 +268,53 @@ let getOrAddHashIfSmaller hash steps (globalState: GlobalStatesOptimalPath) =
     globalState.[hash]
 
 
+let bfs start finalStateCheck = 
+    let mutable minSteps = 40 
+    let q = new Queue<TestingFacility>()
+    q.Enqueue(start);
+
+    let visited = new Dictionary<string, int>() 
+
+    while q.Count > 0 do 
+        let testingFacility = q.Dequeue()
+        match finalStateCheck testingFacility with 
+        | true -> 
+            printfn "Found a solution with %A steps" testingFacility.StepsCount
+            if testingFacility.StepsCount < minSteps then 
+                minSteps <- testingFacility.StepsCount 
+        | _ -> 
+            let hash = getTestingFacilityHash testingFacility 
+            if not (visited.ContainsKey hash) || visited.[hash] > testingFacility.StepsCount then 
+                visited.[hash] <- testingFacility.StepsCount
+                let nextFloors = 
+                    match testingFacility.CurrentFloor with 
+                    | 0 -> [ 1 ]
+                    | 3 -> [ 2 ]
+                    | _ -> [testingFacility.CurrentFloor + 1; testingFacility.CurrentFloor - 1]
+                let moves = 
+                    nextFloors
+                    |> List.collect (fun floor -> (generateNextMoves testingFacility floor) |> List.map (fun m -> (floor, m)))
+                let appliedMoves = 
+                    moves 
+                    |> List.map (fun (floor, move) -> applyMove testingFacility move)
+                    |> List.filter (fun tf -> tf.StepsCount < minSteps) 
+                
+                appliedMoves
+                |> List.iter (fun tf -> q.Enqueue(tf))   
+    minSteps
+
+
 let rec solve finalTestCheck testingFacility currentFloor (currentStates: Set<string>) (globalOptimalStates: GlobalStatesOptimalPath) currentStepsCount = 
     match currentStepsCount > 40 with
     | true -> () // this is a bad one so we drop it 
     | false -> 
         match finalTestCheck testingFacility currentFloor with 
         | true -> // update the global minimum 
-            let stateHash = getTestingFacilityHash testingFacility currentFloor 
+            let stateHash = getTestingFacilityHash testingFacility  
             let currentOptimalPathToCurrentState = getOrAddHashIfSmaller stateHash currentStepsCount globalOptimalStates
             printfn "Optimal number of steps to a solution found so far: %A" currentOptimalPathToCurrentState 
         | _ -> 
-            let stateHash = getTestingFacilityHash testingFacility currentFloor 
+            let stateHash = getTestingFacilityHash testingFacility  
             // is our performance way crappier than the globalStateOne? 
             let currentOptimalPathToCurrentState = getOrAddHashIfSmaller stateHash currentStepsCount globalOptimalStates
 
@@ -287,7 +336,7 @@ let rec solve finalTestCheck testingFacility currentFloor (currentStates: Set<st
                     //printfn "%A" currentStates
                     let moves = 
                         nextFloors
-                        |> List.collect (fun floor -> (generateNextMoves testingFacility currentFloor floor) |> List.map (fun m -> (floor, m)))
+                        |> List.collect (fun floor -> (generateNextMoves testingFacility floor) |> List.map (fun m -> (floor, m)))
                     let appliedMoves = 
                         moves 
                         |> List.map (fun (floor, move) -> (floor, applyMove testingFacility move))
@@ -295,63 +344,44 @@ let rec solve finalTestCheck testingFacility currentFloor (currentStates: Set<st
                     appliedMoves
                         |> List.iter (fun (floor, newState) -> solve finalTestCheck newState floor newCurrentStates globalOptimalStates (currentStepsCount + 1))
                                  
-
-
-let run_day11() =
-    let run_for_test() =      
-        let testingFacility = {
-            Floors = 
+let run_for_test() =      
+    let testingFacility = {
+        Floors = 
             [
                 { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList ["H"; "L"] }
                 { Index = 1; Generators = Set.ofList ["H"] ; Microchips = Set.ofList [] }
                 { Index = 2; Generators = Set.ofList ["L"] ; Microchips = Set.ofList [] }
                 { Index = 3; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-            ]
-        }
+            ];
+        CurrentFloor = 0;
+        StepsCount = 0;            
+    }
 
-        let expectedResult = {
-            Floors = 
-            [
-                { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-                { Index = 1; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-                { Index = 2; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-                { Index = 3; Generators = Set.ofList ["H"; "L"] ; Microchips = Set.ofList ["H"; "L"] }
-            ]
-        }
+    printfn "Min no of moves: %A" (bfs testingFacility isFinalStateTest)
 
-        let globalStates = new GlobalStatesOptimalPath()
-
-        solve isFinalStateTest testingFacility 0 (Set.ofList []) globalStates 0  
-
-        let finalHash = getTestingFacilityHash expectedResult 3 
-        printfn "Optimal number of steps: %A" globalStates.[finalHash]
-
-    let run_part1() = 
-        let testingFacility = {
-            Floors = 
+let run_part1() = 
+    let testingFacility = {
+        Floors = 
             [
                 { Index = 0; Generators = Set.ofList ["PR"] ; Microchips = Set.ofList ["PR"] }
                 { Index = 1; Generators = Set.ofList ["CO"; "CR"; "RU"; "PL"] ; Microchips = Set.ofList [] }
                 { Index = 2; Generators = Set.ofList [] ; Microchips = Set.ofList ["CO"; "CR"; "RU"; "PL"] }
                 { Index = 3; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-            ]
-        }
+            ];
+        CurrentFloor = 0;
+        StepsCount = 0;   
+    }
 
-        let expectedResult = {
-            Floors = 
-            [
-                { Index = 0; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-                { Index = 1; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-                { Index = 2; Generators = Set.ofList [] ; Microchips = Set.ofList [] }
-                { Index = 3; Generators = Set.ofList ["PR"; "CO"; "CR"; "RU"; "PL"] ; Microchips = Set.ofList ["PR"; "CO"; "CR"; "RU"; "PL"] }
-            ]
-        }
+    printfn "Min no of moves: %A" (bfs testingFacility isFinalStatePart1)
 
-        let globalStates = new GlobalStatesOptimalPath()
+let run_day11() =
 
-        solve isFinalStatePart1 testingFacility 0 (Set.ofList []) globalStates 0  
-
-        let finalHash = getTestingFacilityHash expectedResult 3 
-        printfn "Optimal number of steps: %A" globalStates.[finalHash]
-
+    // run_for_test()
     run_part1()
+
+//
+
+//
+//
+//
+//    run_part1()
