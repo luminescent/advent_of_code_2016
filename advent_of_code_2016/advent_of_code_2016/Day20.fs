@@ -9,17 +9,20 @@ let intersectsOrTouches s a =
     let (x, y) = s 
     (x - 1L <= a && a <= y + 1L)
 
-let mergeSegments (s1: Segment) (s2: Segment) = 
-    let (x1, y1) = s1 
-    let (x2, y2) = s2 
-    (min x1 x2, max y1 y2)    
-
 let segmentsIntersectOrTouch s1 s2 = 
     let (x1, y1) = s1 
     let (x2, y2) = s2 
 
-    x1 |> intersectsOrTouches s2 || y1 |> intersectsOrTouches s2 || x2 |> intersectsOrTouches s1 || y2 |> intersectsOrTouches s1 
+    x1 |> intersectsOrTouches s2 
+    || y1 |> intersectsOrTouches s2 
+    || x2 |> intersectsOrTouches s1 
+    || y2 |> intersectsOrTouches s1 
 
+
+let mergeSegments (s1: Segment) (s2: Segment) = 
+    let (x1, y1) = s1 
+    let (x2, y2) = s2 
+    (min x1 x2, max y1 y2)    
 
 let processSegment (segments: Segment list) segment = 
     let computeIntersections = 
@@ -28,8 +31,8 @@ let processSegment (segments: Segment list) segment =
 
     let intersections =
         computeIntersections
-        |> List.filter (fun (s, intersects) -> intersects)
-        |> List.map (fun (s, _) -> s)
+        |> List.filter snd
+        |> List.map fst
     
     let merged = 
         intersections 
@@ -37,8 +40,8 @@ let processSegment (segments: Segment list) segment =
 
     let neutral = 
         computeIntersections
-        |> List.filter (fun (s, intersects) -> not intersects)
-        |> List.map (fun (s, _) -> s)
+        |> List.filter (snd >> not)
+        |> List.map fst
 
     merged :: neutral 
 
@@ -46,7 +49,7 @@ let processSegment (segments: Segment list) segment =
 let findMinIpAddress (segments: Segment list)  = 
     let segment0 = 
         segments 
-        |> List.find(fun (x, y) -> x = 0L)
+        |> List.find(fun (x, _) -> x = 0L)
 
     let processedSegments = 
         segments 
@@ -54,7 +57,7 @@ let findMinIpAddress (segments: Segment list)  =
 
     let (a, b) = 
         processedSegments 
-        |> List.find (fun (x, y) -> x = 0L)
+        |> List.find (fun (x, _) -> x = 0L)
 
     b + 1L    
 
@@ -71,7 +74,7 @@ let countIpAddresses (segments: Segment list) =
     
     let orderedSegments = 
         processedSegments        
-        |> List.sortBy (fun (x, _) -> x) 
+        |> List.sortBy fst 
 
     let count = 
         orderedSegments
