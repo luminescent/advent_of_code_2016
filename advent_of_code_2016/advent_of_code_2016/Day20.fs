@@ -55,7 +55,7 @@ let findMinIpAddress (segments: Segment list)  =
         segments 
         |> List.fold processSegment [segment0]
 
-    let (a, b) = 
+    let (_, b) = 
         processedSegments 
         |> List.find (fun (x, _) -> x = 0L)
 
