@@ -12,6 +12,14 @@ type Operation =
     | ReversePositions of X:int * Y:int
     | MovePosition of X: int * Y:int
 
+let rec distribute e = function
+  | [] -> [[e]]
+  | x::xs' as xs -> (e::xs)::[for xs in distribute e xs' -> x::xs]
+
+let rec permute = function
+  | [] -> [[]]
+  | e::xs -> List.collect (distribute e) (permute xs)
+
 
 let parse (s: string) = 
     let parts = s.Split([| ' '|], StringSplitOptions.RemoveEmptyEntries)
@@ -30,7 +38,7 @@ let parse (s: string) =
 
 
 let rec processOperation password operation = 
-    printfn "currently processing %A with %A" (password |> Array.map (fun c -> c.ToString()) |> String.concat "")  operation 
+    //printfn "currently processing %A with %A" (password |> Array.map (fun c -> c.ToString()) |> String.concat "")  operation 
     match operation with 
     | Operation.SwapPosition(x, y) -> 
         password
@@ -83,13 +91,34 @@ let rec processOperation password operation =
             let a = [| p2; p3; p4 |] |> Array.fold Array.append p1 
             a
 
+let processOperations password operations = 
+    operations
+    |> Array.fold processOperation password
+
+let unscramblePassword password operations = 
+    let permutations = 
+        password
+        |> Array.toList 
+        |> permute 
+        |> List.map List.toArray
+
+    let unscrambled = 
+        permutations
+        |> List.find (fun pass -> (processOperations pass operations) = password )
+        
+    unscrambled 
+
 let run_day21() = 
     let operations = 
         File.ReadAllLines("Day21.txt")
         |> Array.map parse 
 
-    let scrambledPassword = 
+    let scrambledPassword =  
         operations
-        |> Array.fold processOperation ("abcdefgh".ToCharArray())
+        |> processOperations ("abcdefgh".ToCharArray())
 
-    printfn "Scrambled password: %A" scrambledPassword
+    printfn "Scrambled password: %A" (scrambledPassword |> Array.map (fun c -> c.ToString()) |> String.concat "")
+
+    let unscrambledPassword = unscramblePassword ("fbgdceah".ToCharArray()) operations
+
+    printfn "Unscrambled password: %A" (unscrambledPassword |> Array.map (fun c -> c.ToString()) |> String.concat "")
