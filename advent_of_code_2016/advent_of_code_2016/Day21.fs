@@ -40,41 +40,41 @@ let parse (s: string) =
 let rec processOperation password operation = 
     //printfn "currently processing %A with %A" (password |> Array.map (fun c -> c.ToString()) |> String.concat "")  operation 
     match operation with 
-    | Operation.SwapPosition(x, y) -> 
+    | SwapPosition(x, y) -> 
         password
         |> Array.mapi (fun i c -> 
                         match i with 
                         | a when a = x -> password.[y]
                         | a when a = y -> password.[x]
                         | _ -> c)
-    | Operation.SwapLetter(a, b) -> 
+    | SwapLetter(a, b) -> 
         password
         |> Array.map (fun c -> 
                         match c with 
                         | x when x = a -> b
                         | x when x = b -> a
                         | _ -> c)
-    | Operation.RotateRight(steps) -> 
-        Operation.RotateLeft(password.Length - steps)
+    | RotateRight(steps) -> 
+        RotateLeft(password.Length - steps)
         |> processOperation password         
-    | Operation.RotateLeft(steps) -> 
+    | RotateLeft(steps) -> 
         password
         |> Array.mapi (fun i c -> password.[(i + steps) % password.Length])          
-    | Operation.RotateBasedOnLetterIndex(a) -> 
+    | RotateBasedOnLetterIndex(a) -> 
         let position = password |> Array.findIndex (fun c -> c = a)
         let times = 
             match position with 
             | x when x >= 4 -> position + 2
             | _ -> position + 1
-        Operation.RotateRight(times % password.Length) 
+        RotateRight(times % password.Length) 
         |> processOperation password
-    | Operation.ReversePositions(x, y) -> 
+    | ReversePositions(x, y) -> 
         password
         |> Array.mapi (fun i c -> 
                         match i with 
                         | z when z >= x && z <= y -> password.[x + y - z]
                         | _ -> c)
-    | Operation.MovePosition(x, y) -> 
+    | MovePosition(x, y) -> 
         match x < y with 
         | true ->
             let p1 = password |> Array.take x 
