@@ -23,6 +23,7 @@ open Day19
 open Day20 
 open Day21
 open Day22
+open Day23
 open Microsoft.FSharp.Core.Operators 
 open System
 
@@ -52,7 +53,8 @@ let main argv =
     //run_day19()
     //run_day20()
     //run_day21()
-    run_day22()
+    //run_day22()
+    run_day23()
     
 
 

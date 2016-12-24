@@ -11,7 +11,7 @@ type Source =
 
 type Instruction =
     | Cpy of Source*Register 
-    | Jnz of Source*int 
+    | Jnz of Source*Source 
     | Inc of Register 
     | Dec of Register 
 
@@ -30,9 +30,16 @@ let parseInstruction (s:string) =
         | _ -> Instruction.Cpy(Source.Register(parts.[1]), parts.[2])
     | "jnz" -> 
         let isInt, value = Int32.TryParse(parts.[1]) 
-        match isInt with
-        | true -> Instruction.Jnz(Source.Value(value), parts.[2] |> Int32.Parse)
-        | _ -> Instruction.Jnz(Source.Register(parts.[1]), parts.[2] |> Int32.Parse)
+        let isIntSource, sourceValue = Int32.TryParse(parts.[2])
+        let part1 = 
+            match isInt with 
+            | true -> Value(value)
+            | _ -> Register(parts.[1])
+        let part2 = 
+            match isIntSource with 
+            | true -> Value(sourceValue)
+            | _ -> Register(parts.[2])
+        Jnz(part1, part2)
     | "inc" -> 
         Instruction.Inc(parts.[1])
     | "dec" -> 
@@ -57,11 +64,15 @@ let rec runInstrcution currentInstruction (instructions: Instruction list) (regi
                 match source with 
                 | Value(value) -> value
                 | Register(register) -> registerValues.[register] 
+            let jumps = 
+                match value with 
+                | Value(x) -> x
+                | Register(r) -> registerValues.[r]
             match x with 
             | 0 -> 
                 runInstrcution (currentInstruction + 1) instructions registerValues 
             | _ -> 
-                runInstrcution (currentInstruction + value) instructions registerValues 
+                runInstrcution (currentInstruction + jumps) instructions registerValues 
         | Instruction.Inc(register) -> 
             let newValue = registerValues.[register] + 1
             let newRegisterValues = replace registerValues register newValue
