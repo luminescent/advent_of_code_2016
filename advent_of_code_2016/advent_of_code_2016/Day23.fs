@@ -58,6 +58,44 @@ let parseInstruction (s:string) =
     | _ -> 
         failwithf "Unknown instruction %s" s 
 
+let tryParseAsInc instruction = 
+    match instruction with 
+    | Inc(x) -> Some x
+    | _ -> None     
+let tryParseAsDec instruction = 
+    match instruction with 
+    | Dec(x) -> Some x
+    | _ -> None     
+let tryParseAsJnzForRegister instruction = 
+    match instruction with 
+    | Jnz(a, b) -> 
+        match a with 
+        | Value(_) -> None 
+        | Register(r) -> 
+            match b with 
+            | Register(_) -> None
+            | Value(v) -> Some (r, v)
+    | _ -> None 
+
+let buildMultiplication currentInstruction (instructions: Instruction list) registerValues = 
+    match currentInstruction + 2 >= instructions.Length with 
+    | true -> None 
+    | false ->
+        let incInstruction = tryParseAsInc instructions.[currentInstruction] 
+        let decInstruction = tryParseAsDec instructions.[currentInstruction + 1]
+        let jnzInstruction = tryParseAsJnzForRegister instructions.[currentInstruction + 2]
+
+        match incInstruction.IsSome && decInstruction.IsSome && jnzInstruction.IsSome with 
+        | false -> None 
+        | true -> 
+            let a = incInstruction.Value 
+            let b = decInstruction.Value 
+            let (c, d) = jnzInstruction.Value 
+            match (b = c) && (d = -2) with 
+            | true -> Some(a, b)
+            | _ -> None 
+
+
 let rec runInstrcution currentInstruction (instructions: Instruction list) (registerValues: Map<Register, int>) = 
     match currentInstruction >= instructions.Length with 
     | true -> registerValues 
@@ -89,9 +127,19 @@ let rec runInstrcution currentInstruction (instructions: Instruction list) (regi
             | _ -> 
                 runInstrcution (currentInstruction + jumps) instructions registerValues 
         | Inc(register) -> 
-            let newValue = registerValues.[register] + 1
-            let newRegisterValues = replace registerValues register newValue
-            runInstrcution (currentInstruction + 1) instructions newRegisterValues
+            // if on an instruction with inc a, followed by dec b, followed by jnz b -2, we update the registers (a = a + b) and b = 0, and jump to currentInstruction + 3     
+            let multiplication = buildMultiplication currentInstruction instructions registerValues 
+            match multiplication with 
+            | None -> 
+                let newValue = registerValues.[register] + 1
+                let newRegisterValues = replace registerValues register newValue
+                runInstrcution (currentInstruction + 1) instructions newRegisterValues
+            | Some (a, b) -> 
+                // we update the registers and skip 
+                let newValueA = registerValues.[a] + registerValues.[b]
+                let newRegA = replace registerValues a newValueA
+                let newRegB = replace newRegA b 0 
+                runInstrcution (currentInstruction + 3) instructions newRegB
         | Dec(register) -> 
             let newValue = registerValues.[register] - 1
             let newRegisterValues = replace registerValues register newValue 
@@ -123,7 +171,7 @@ let run_day23() =
         |> Array.map parseInstruction
         |> Array.toList 
 
-    let registers = replace  Map.empty ("a") 7 // <Register, Int>. 
+    let registers = replace  Map.empty ("a") 12 
 
     let regValues = runInstrcution 0 instructions registers
 
